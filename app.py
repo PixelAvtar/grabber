@@ -33,6 +33,11 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 APP_USERNAME = os.environ.get("APP_USERNAME", "")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
 
+# Render (and most cloud hosts) mount "Secret Files" at /etc/secrets/<filename>.
+# If a cookies.txt is present there, yt-dlp uses it to look like a logged-in
+# browser instead of a flagged datacenter IP. Safe to leave unset locally.
+COOKIES_PATH = os.environ.get("COOKIES_PATH", "/etc/secrets/cookies.txt")
+
 # job_id -> state dict
 JOBS = {}
 JOBS_LOCK = threading.Lock()
@@ -78,6 +83,8 @@ def friendly_error(exc: Exception) -> str:
         return "That doesn't look like a URL this tool can read."
     if "http error 403" in low or "forbidden" in low:
         return "YouTube blocked the request (403). Usually fixed by retrying — try again."
+    if "sign in to confirm you're not a bot" in low or "not a bot" in low:
+        return "YouTube's bot-check blocked this server. Cookie file missing or expired — re-export cookies.txt and re-upload it."
     return f"Download failed: {msg[:200]}"
 
 
@@ -115,6 +122,8 @@ def base_ydl_opts(extra=None):
         "nocheckcertificate": True,
         "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
     }
+    if os.path.exists(COOKIES_PATH):
+        opts["cookiefile"] = COOKIES_PATH
     if extra:
         opts.update(extra)
     return opts
