@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grabber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0D10;
+    --panel: #14171C;
+    --panel-2: #1B1F26;
+    --line: #262B33;
+    --text: #E7E9EC;
+    --muted: #8A909C;
+    --accent: #5EE6A8;
+    --accent-dim: #2C5C49;
+    --error: #FF6B6B;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 24px 0;
+    letter-spacing: -0.01em;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .input-row { display: flex; gap: 8px; }
+  input[type=text] {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 13px 14px;
+    font-size: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    color: #06140E;
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter .15s, transform .1s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+  }
+
+  .meta { display: none; margin-top: 20px; }
+  .meta.show { display: block; }
+  .meta-row { display: flex; gap: 14px; }
+  .thumb {
+    width: 140px; height: 79px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .meta-text { min-width: 0; }
+  .vtitle {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .vsub { font-size: 12px; color: var(--muted); margin-top: 6px; font-family: 'IBM Plex Mono', monospace; }
+
+  .qualities { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .qchip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .qchip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(94,230,168,0.08);
+  }
+
+  .go { width: 100%; margin-top: 16px; padding: 13px 0; font-size: 14px; }
+
+  .progress-wrap { display: none; margin-top: 18px; }
+  .progress-wrap.show { display: block; }
+  .progress-track {
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .25s ease;
+  }
+  .telemetry {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .telemetry .pct { color: var(--accent); font-weight: 600; }
+
+  .error-box {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--error);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .error-box.show { display: block; }
+
+  .done-box { display: none; margin-top: 16px; }
+  .done-box.show { display: block; }
+
+  footer {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">// personal use only</div>
+  <h1>Grabber</h1>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="url" placeholder="paste a youtube link" autocomplete="off" spellcheck="false">
+      <button id="fetchBtn">Fetch</button>
+    </div>
+
+    <div class="meta" id="meta">
+      <div class="meta-row">
+        <img class="thumb" id="thumb" src="" alt="">
+        <div class="meta-text">
+          <div class="vtitle" id="vtitle"></div>
+          <div class="vsub" id="vsub"></div>
+        </div>
+      </div>
+
+      <div class="qualities" id="qualities"></div>
+
+      <button class="go" id="downloadBtn">Download MP4</button>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="telemetry">
+        <span id="statusText">starting…</span>
+        <span><span class="pct" id="pctText">0%</span> · <span id="speedText">—</span> · ETA <span id="etaText">—</span></span>
+      </div>
+    </div>
+
+    <div class="done-box" id="doneBox">
+      <button class="go" id="saveBtn">Save file</button>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <footer>local + private — not for public/shared deployment</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentJob = null;
+let pollTimer = null;
+let selectedQuality = 'best';
+
+function bytesToSpeed(bps) {
+  if (!bps) return '—';
+  const mb = bps / (1024*1024);
+  return mb >= 1 ? mb.toFixed(1) + ' MB/s' : (bps/1024).toFixed(0) + ' KB/s';
+}
+function secsToEta(s) {
+  if (s === null || s === undefined) return '—';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+function resetPanels() {
+  $('errorBox').classList.remove('show');
+  $('progressWrap').classList.remove('show');
+  $('doneBox').classList.remove('show');
+}
+
+$('fetchBtn').onclick = async () => {
+  const url = $('url').value.trim();
+  if (!url) return;
+  resetPanels();
+  $('meta').classList.remove('show');
+  $('fetchBtn').disabled = true;
+  $('fetchBtn').textContent = 'Loading…';
+
+  try {
+    const res = await fetch('/api/info', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    $('thumb').src = data.thumbnail || '';
+    $('vtitle').textContent = data.title || 'Untitled';
+    const mins = data.duration ? `${Math.floor(data.duration/60)}:${String(data.duration%60).padStart(2,'0')}` : '—';
+    $('vsub').textContent = `${data.uploader || ''} · ${mins}`;
+
+    const qWrap = $('qualities');
+    qWrap.innerHTML = '';
+    const options = [{label: 'Best', val: 'best'}, ...data.qualities.map(h => ({label: h+'p', val: h})), {label: 'Audio only', val: 'audio'}];
+    options.forEach((opt, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'qchip' + (opt.val === 'best' ? ' active' : '');
+      chip.textContent = opt.label;
+      chip.onclick = () => {
+        document.querySelectorAll('.qchip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        selectedQuality = opt.val;
+      };
+      qWrap.appendChild(chip);
+    });
+    selectedQuality = 'best';
+
+    $('meta').classList.add('show');
+  } catch (e) {
+    $('errorBox').textContent = e.message;
+    $('errorBox').classList.add('show');
+  } finally {
+    $('fetchBtn').disabled = false;
+    $('fetchBtn').textContent = 'Fetch';
+  }
+};
+
+$('downloadBtn').onclick = async () => {
+  const url = $('url').value.trim();
+  resetPanels();
+  $('progressWrap').classList.add('show');
+  $('downloadBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, quality: selectedQuality})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    currentJob = data.job_id;
+    pollProgress();
+  } catch (e) {
+    $('errorBox').textContent = e.message;
+    $('errorBox').classList.add('show');
+    $('progressWrap').classList.remove('show');
+    $('downloadBtn').disabled = false;
+  }
+};
+
+function pollProgress() {
+  pollTimer = setInterval(async () => {
+    const res = await fetch(`/api/progress/${currentJob}`);
+    const job = await res.json();
+    if (job.error) { clearInterval(pollTimer); return; }
+
+    $('progressFill').style.width = (job.percent || 0) + '%';
+    $('pctText').textContent = (job.percent || 0) + '%';
+    $('speedText').textContent = bytesToSpeed(job.speed);
+    $('etaText').textContent = secsToEta(job.eta);
+
+    const labels = {starting: 'starting…', downloading: 'downloading', merging: 'finalizing mp4…', finished: 'done', error: 'error'};
+    $('statusText').textContent = labels[job.status] || job.status;
+
+    if (job.status === 'finished') {
+      clearInterval(pollTimer);
+      $('downloadBtn').disabled = false;
+      $('doneBox').classList.add('show');
+      $('saveBtn').onclick = () => { window.location.href = `/api/file/${currentJob}`; };
+    } else if (job.status === 'error') {
+      clearInterval(pollTimer);
+      $('downloadBtn').disabled = false;
+      $('progressWrap').classList.remove('show');
+      $('errorBox').textContent = job.error;
+      $('errorBox').classList.add('show');
+    }
+  }, 800);
+}
+
+$('url').addEventListener('keydown', e => { if (e.key === 'Enter') $('fetchBtn').click(); });
+</script>
+</body>
+</html>
